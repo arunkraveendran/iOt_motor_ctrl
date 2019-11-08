@@ -10,6 +10,7 @@ char pass[] = "9739520911"; // password of your Wi-Fi
 
 float water_level_row = 0.0;
 int water_level_processed = 0;
+int tank_filling = 0;
 
 #define BUZZ D4
 #define RLY D6
@@ -100,16 +101,32 @@ void loop()
   Serial.print( water_level_row);
   
   water_level_processed = process_water_level(water_level_row);
-
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("Water level");
-  lcd.setCursor(0, 1);
-  lcd.print(water_level_processed);  
   
   Blynk.run();
 
-  if (water_level_processed == TANK_FULL)
+  if (  ( water_level_processed <= TANK_EMPTY )
+      &&( tank_filling == 0))
+  {
+    relay_out(TRUE);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Motor On ");
+    lcd.setCursor(0, 1);
+    lcd.print(water_level_processed);
+    tank_filling = 1;
+    delay(3000);
+  }
+  else if (  ( water_level_processed > TANK_EMPTY )
+           &&( water_level_processed < TANK_FULL )
+           &&( tank_filling == 1))
+  {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Tank is Filling ");
+    lcd.setCursor(0, 1);
+    lcd.print(water_level_processed);
+  }
+  else if (water_level_processed >= TANK_FULL)
   {
     relay_out(FALSE); 
     lcd.clear();
@@ -117,10 +134,17 @@ void loop()
     lcd.print("Tank Full");
     lcd.setCursor(0, 1);
     lcd.print("Motor Stopped");
+    tank_filling = 0;
     delay(3000);
   }
-  else if (water_level_processed <= TANK_EMPTY)
+  else if(  ( water_level_processed > TANK_EMPTY )
+          &&( water_level_processed < TANK_FULL )
+          &&( tank_filling == 0))
   {
-    relay_out(TRUE);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Water level");
+    lcd.setCursor(0, 1);
+    lcd.print(water_level_processed);
   }
 }
