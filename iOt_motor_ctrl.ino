@@ -4,11 +4,12 @@
 #include <ESP8266WiFi.h>  
 #include <BlynkSimpleEsp8266.h> 
 
-char auth[] = "6yCV7O58nOomqRstWXoPJgOjS5o53IUn";
+char auth[] = "abcdefghijklmnopqrstuvwxyz";
 char ssid[] = "Arun"; // username or ssid of your WI-FI  
 char pass[] = "9739520911"; // password of your Wi-Fi  
 
-float water_level = 0.0;
+float water_level_row = 0.0;
+int water_level_processed = 0;
 
 #define BUZZ D4
 #define RLY D6
@@ -22,7 +23,17 @@ float water_level = 0.0;
 #define TRUE 1
 #define FALSE 0
 
+#define TANK_FULL 500
+#define TANK_EMPTY 50
+
 LiquidCrystal lcd(RS, EN, d4, d5, d6, d7);
+
+int process_water_level (float wtr_level)
+{
+  static int wtr_level_processed = 0;
+  
+  return (wtr_level_processed);
+}
 
 void buzz(int beep_no)
 { 
@@ -84,6 +95,32 @@ void setup()
 
 void loop() 
 {
-  water_level = analogRead(A0);
+  water_level_row = analogRead(A0);
+  Serial.print("water_level_row =");
+  Serial.print( water_level_row);
+  
+  water_level_processed = process_water_level(water_level_row);
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Water level");
+  lcd.setCursor(0, 1);
+  lcd.print(water_level_processed);  
+  
   Blynk.run();
+
+  if (water_level_processed == TANK_FULL)
+  {
+    relay_out(FALSE); 
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Tank Full");
+    lcd.setCursor(0, 1);
+    lcd.print("Motor Stopped");
+    delay(3000);
+  }
+  else if (water_level_processed <= TANK_EMPTY)
+  {
+    relay_out(TRUE);
+  }
 }
